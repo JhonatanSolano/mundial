@@ -78,6 +78,11 @@ function authMessage(error: unknown) {
   if (code.includes("auth/invalid-credential")) return "Correo o contraseña incorrectos.";
   if (code.includes("auth/weak-password")) return "La contraseña debe tener al menos 6 caracteres.";
   if (code.includes("auth/too-many-requests")) return "Demasiados intentos. Espera un momento e inténtalo de nuevo.";
+  if (code.includes("auth/unauthorized-domain")) {
+    return "Este dominio no está autorizado en Firebase. Agrega jhonatansolano.github.io en Authentication > Settings > Authorized domains.";
+  }
+  if (code.includes("auth/popup-closed-by-user")) return "Cerraste la ventana de Google antes de terminar.";
+  if (code.includes("auth/cancelled-popup-request")) return "Ya hay una ventana de Google abierta. Ciérrala e inténtalo otra vez.";
   return "No pudimos completar la operación. Revisa tus datos e inténtalo de nuevo.";
 }
 
