@@ -3,6 +3,8 @@ import {
   Download,
   LogOut,
   Moon,
+  Eye,
+  EyeOff,
   RotateCcw,
   Search,
   Share2,
@@ -274,6 +276,7 @@ function LoginScreen({
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState<"login" | "register">("login");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -298,6 +301,7 @@ function LoginScreen({
     setMode(nextMode);
     setEmail("");
     setPassword("");
+    setShowPassword(false);
     setMessage("");
   }
 
@@ -346,14 +350,23 @@ function LoginScreen({
           </label>
           <label className="field">
             Contraseña
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              placeholder="Mínimo 6 caracteres"
-              onChange={(event) => setPassword(event.target.value)}
-            />
+            <span className="password-field">
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                minLength={6}
+                value={password}
+                placeholder="Mínimo 6 caracteres"
+                onChange={(event) => setPassword(event.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((current) => !current)}
+                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </span>
           </label>
           {message && <p className={message.includes("creada") || message.includes("Revisa") ? "form-success" : "form-error"}>{message}</p>}
           <button className="primary full" type="submit" disabled={submitting}>
