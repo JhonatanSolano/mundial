@@ -12,7 +12,7 @@ import {
   Trophy,
   Upload,
 } from "lucide-react";
-import { ChangeEvent, CSSProperties, ReactNode, useMemo, useRef, useState } from "react";
+import { ChangeEvent, CSSProperties, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { groupIds, groupMatches, groups, teams } from "./data/tournament";
 import { usePredictions } from "./hooks/usePredictions";
 import {
@@ -164,7 +164,6 @@ export function App() {
             predictions={predictions}
             standings={standings}
             setManualOrder={store.setManualOrder}
-            pickGroup={store.pickGroup}
           />
         )}
         {tab === "knockout" && (
@@ -606,38 +605,61 @@ function CalendarView({
   const [group, setGroup] = useState<GroupId | "all">("all");
   const [phase, setPhase] = useState<"all" | KnockoutSlot["phase"] | "group">("all");
   const [status, setStatus] = useState<"all" | "pending" | "done">("all");
+  const [selectedDate, setSelectedDate] = useState("");
 
-  const groupEvents = groupMatches.map((match) => ({ type: "group" as const, date: match.date, timeCO: match.timeCO, match }));
-  const knockoutEvents = knockout.map((slot) => ({ type: "knockout" as const, date: slot.date, timeCO: slot.timeCO, slot }));
-  const events = [...groupEvents, ...knockoutEvents].filter((event) => {
-    if (phase !== "all" && event.type === "group" && phase !== "group") return false;
-    if (phase !== "all" && event.type === "knockout" && event.slot.phase !== phase) return false;
+  const groupEvents = useMemo(
+    () => groupMatches.map((match) => ({ type: "group" as const, date: match.date, timeCO: match.timeCO, match })),
+    [],
+  );
+  const knockoutEvents = useMemo(
+    () => knockout.map((slot) => ({ type: "knockout" as const, date: slot.date, timeCO: slot.timeCO, slot })),
+    [knockout],
+  );
+  const events = useMemo(() => {
+    const normalizedQuery = query.toLowerCase();
+    return [...groupEvents, ...knockoutEvents].filter((event) => {
+      if (phase !== "all" && event.type === "group" && phase !== "group") return false;
+      if (phase !== "all" && event.type === "knockout" && event.slot.phase !== phase) return false;
 
-    if (event.type === "knockout") {
-      const text = `${event.slot.title} ${event.slot.venue} ${event.slot.sourceHome} ${event.slot.sourceAway} ${event.slot.home?.name ?? ""} ${event.slot.away?.name ?? ""}`.toLowerCase();
-      if (query && !text.includes(query.toLowerCase())) return false;
-      if (group !== "all") return false;
-      if (status === "pending" && predictions.knockout[event.slot.id]) return false;
-      if (status === "done" && !predictions.knockout[event.slot.id]) return false;
+      if (event.type === "knockout") {
+        const text = `${event.slot.title} ${event.slot.venue} ${event.slot.sourceHome} ${event.slot.sourceAway} ${event.slot.home?.name ?? ""} ${event.slot.away?.name ?? ""}`.toLowerCase();
+        if (normalizedQuery && !text.includes(normalizedQuery)) return false;
+        if (group !== "all") return false;
+        if (status === "pending" && predictions.knockout[event.slot.id]) return false;
+        if (status === "done" && !predictions.knockout[event.slot.id]) return false;
+        return true;
+      }
+
+      const match = event.match;
+      const home = getTeam(match.home)!;
+      const away = getTeam(match.away)!;
+      const text = `partido ${match.id} grupo ${match.group} ${home.name} ${away.name} ${match.venue}`.toLowerCase();
+      if (normalizedQuery && !text.includes(normalizedQuery)) return false;
+      if (group !== "all" && match.group !== group) return false;
+      if (status === "pending" && predictions.group[match.id]) return false;
+      if (status === "done" && !predictions.group[match.id]) return false;
       return true;
+    }).sort((a, b) => `${a.date} ${a.timeCO}`.localeCompare(`${b.date} ${b.timeCO}`));
+  }, [group, groupEvents, knockoutEvents, phase, predictions.group, predictions.knockout, query, status]);
+
+  const byDate = useMemo(() => groupBy(events, (event) => event.date), [events]);
+  const dateEntries = useMemo(() => Object.entries(byDate).sort(([a], [b]) => a.localeCompare(b)), [byDate]);
+  const activeDate = selectedDate && byDate[selectedDate] ? selectedDate : dateEntries[0]?.[0] ?? "";
+  const activeEvents = activeDate ? byDate[activeDate] ?? [] : [];
+
+  useEffect(() => {
+    if (!dateEntries.length) {
+      setSelectedDate("");
+      return;
     }
-
-    const match = event.match;
-    const home = getTeam(match.home)!;
-    const away = getTeam(match.away)!;
-    const text = `partido ${match.id} grupo ${match.group} ${home.name} ${away.name} ${match.venue}`.toLowerCase();
-    if (query && !text.includes(query.toLowerCase())) return false;
-    if (group !== "all" && match.group !== group) return false;
-    if (status === "pending" && predictions.group[match.id]) return false;
-    if (status === "done" && !predictions.group[match.id]) return false;
-    return true;
-  }).sort((a, b) => `${a.date} ${a.timeCO}`.localeCompare(`${b.date} ${b.timeCO}`));
-
-  const byDate = groupBy(events, (event) => event.date);
+    if (!selectedDate || !byDate[selectedDate]) {
+      setSelectedDate(dateEntries[0][0]);
+    }
+  }, [dateEntries, byDate, selectedDate]);
 
   return (
     <section className="stack">
-      <SectionTitle icon={<CalendarDays />} title="Calendario completo" subtitle="Partidos 1 al 104 según el PDF oficial cargado." />
+      <SectionTitle icon={<CalendarDays />} title="Calendario interactivo" subtitle="Elige una fecha para ver partidos, hora y estadio." />
       <Filters
         query={query}
         setQuery={setQuery}
@@ -648,29 +670,50 @@ function CalendarView({
         status={status}
         setStatus={setStatus}
       />
-      {Object.entries(byDate).map(([date, dayEvents]) => (
-        <div className="day-block" key={date}>
-          <h2>{formatDate(date)}</h2>
-          {dayEvents.map((event) => (
-            event.type === "group" ? (
-              <MatchCard
-                key={event.match.id}
-                match={event.match}
-                value={predictions.group[event.match.id]}
-                onPick={(value) => pickGroup(event.match.id, value)}
-                allowDraw
-              />
-            ) : (
-              <KnockoutCard
-                key={event.slot.id}
-                slot={event.slot}
-                value={predictions.knockout[event.slot.id]}
-                onPick={(value) => pickKnockout(event.slot.id, value)}
-              />
-            )
-          ))}
+      {dateEntries.length ? (
+        <>
+          <div className="calendar-strip" aria-label="Fechas con partidos">
+            {dateEntries.map(([date, dayEvents]) => (
+              <button
+                key={date}
+                className={activeDate === date ? "date-chip active" : "date-chip"}
+                onClick={() => setSelectedDate(date)}
+              >
+                <span>{formatDate(date)}</span>
+                <strong>{dayEvents.length}</strong>
+              </button>
+            ))}
+          </div>
+          <div className="day-block selected-day">
+            <div className="selected-day-head">
+              <h2>{formatDate(activeDate)}</h2>
+              <span>{activeEvents.length} partido{activeEvents.length === 1 ? "" : "s"}</span>
+            </div>
+            {activeEvents.map((event) => (
+              event.type === "group" ? (
+                <MatchCard
+                  key={event.match.id}
+                  match={event.match}
+                  value={predictions.group[event.match.id]}
+                  onPick={(value) => pickGroup(event.match.id, value)}
+                  allowDraw
+                />
+              ) : (
+                <KnockoutCard
+                  key={event.slot.id}
+                  slot={event.slot}
+                  value={predictions.knockout[event.slot.id]}
+                  onPick={(value) => pickKnockout(event.slot.id, value)}
+                />
+              )
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className="empty-state">
+          No hay partidos con los filtros actuales.
         </div>
-      ))}
+      )}
     </section>
   );
 }
@@ -679,14 +722,13 @@ function GroupsView({
   predictions,
   standings,
   setManualOrder,
-  pickGroup,
 }: {
   predictions: Predictions;
   standings: Record<GroupId, Standing[]>;
   setManualOrder: (scope: GroupId | "thirds", order: string[]) => void;
-  pickGroup: (id: string, value: "home" | "draw" | "away") => void;
 }) {
   const thirds = thirdPlaceTable(standings, predictions.manualOrders.thirds);
+  const [openGroup, setOpenGroup] = useState<GroupId | null>(null);
   return (
     <section className="groups-layout">
       {groupIds.map((groupId) => (
@@ -694,9 +736,9 @@ function GroupsView({
           key={groupId}
           groupId={groupId}
           rows={standings[groupId]}
-          predictions={predictions}
+          isOpen={openGroup === groupId}
+          onToggle={() => setOpenGroup((current) => (current === groupId ? null : groupId))}
           setManualOrder={setManualOrder}
-          pickGroup={pickGroup}
         />
       ))}
       <div className="panel wide">
@@ -711,35 +753,34 @@ function GroupsView({
 function GroupPanel({
   groupId,
   rows,
-  predictions,
+  isOpen,
+  onToggle,
   setManualOrder,
-  pickGroup,
 }: {
   groupId: GroupId;
   rows: Standing[];
-  predictions: Predictions;
+  isOpen: boolean;
+  onToggle: () => void;
   setManualOrder: (scope: GroupId | "thirds", order: string[]) => void;
-  pickGroup: (id: string, value: "home" | "draw" | "away") => void;
 }) {
+  const leader = rows[0]?.team;
   return (
-    <article className="panel">
-      <SectionTitle title={`Grupo ${groupId}`} subtitle={groups[groupId].map((team) => team.name).join(" · ")} />
-      <StandingsTable rows={rows} qualifiedCount={2} />
-      {hasPointTies(rows) && <ManualSorter rows={rows} scope={groupId} setManualOrder={setManualOrder} />}
-      <div className="mini-fixtures">
-        {groupMatches
-          .filter((match) => match.group === groupId)
-          .map((match) => (
-            <MatchCard
-              key={match.id}
-              match={match}
-              value={predictions.group[match.id]}
-              onPick={(value) => pickGroup(match.id, value)}
-              allowDraw
-              compact
-            />
-          ))}
-      </div>
+    <article className={isOpen ? "panel group-accordion open" : "panel group-accordion"}>
+      <button className="group-summary" onClick={onToggle} aria-expanded={isOpen}>
+        <span>
+          <strong>Grupo {groupId}</strong>
+          <small>{groups[groupId].map((team) => team.name).join(" · ")}</small>
+        </span>
+        <span className="group-meta">
+          {leader ? `${leader.name} · ${rows[0].points} pts` : "Sin datos"}
+        </span>
+      </button>
+      {isOpen && (
+        <div className="group-details">
+          <StandingsTable rows={rows} qualifiedCount={2} />
+          {hasPointTies(rows) && <ManualSorter rows={rows} scope={groupId} setManualOrder={setManualOrder} />}
+        </div>
+      )}
     </article>
   );
 }
