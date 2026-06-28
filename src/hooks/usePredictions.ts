@@ -12,6 +12,7 @@ import {
 } from "firebase/auth";
 import {
   doc,
+  getDoc,
   onSnapshot,
   serverTimestamp,
   setDoc,
@@ -60,16 +61,28 @@ function userDoc(uid: string) {
 }
 
 async function ensureUserDocument(user: User, theme: Predictions["theme"]) {
-  await setDoc(
-    userDoc(user.uid),
-    {
-      email: user.email,
-      predictions: { ...defaultPredictions, theme },
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    },
-    { merge: true },
-  );
+  const reference = userDoc(user.uid);
+  const snapshot = await getDoc(reference);
+
+  if (snapshot.exists()) {
+    await setDoc(
+      reference,
+      {
+        email: user.email,
+        lastLoginAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
+    return;
+  }
+
+  await setDoc(reference, {
+    email: user.email,
+    predictions: { ...defaultPredictions, theme },
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    lastLoginAt: serverTimestamp(),
+  });
 }
 
 function authMessage(error: unknown) {
