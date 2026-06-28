@@ -12,6 +12,7 @@ type Seed =
   | `W${GroupId}`
   | `R${GroupId}`
   | `3:${string}`
+  | `TEAM:${string}`
   | `WIN:${number}`
   | `LOS:${number}`;
 
@@ -31,22 +32,22 @@ type KnockoutDefinition = {
 const teamById = new Map(teams.map((team) => [team.id, team]));
 
 const knockoutDefinitions: KnockoutDefinition[] = [
-  game(73, "round32", "Partido 73", "2026-06-28", "14:00", "Los Angeles Stadium", "RA", "RB", "2° Grupo A", "2° Grupo B"),
-  game(74, "round32", "Partido 74", "2026-06-29", "15:30", "Boston Stadium", "WE", "3:ABCDF", "1° Grupo E", "3° Grupo A/B/C/D/F"),
-  game(75, "round32", "Partido 75", "2026-06-29", "20:00", "Estadio Monterrey", "WF", "RC", "1° Grupo F", "2° Grupo C"),
-  game(76, "round32", "Partido 76", "2026-06-29", "12:00", "Houston Stadium", "WE", "RF", "1° Grupo E", "2° Grupo F"),
-  game(77, "round32", "Partido 77", "2026-06-30", "16:00", "New York New Jersey Stadium", "WI", "3:CDFGH", "1° Grupo I", "3° Grupo C/D/F/G/H"),
-  game(78, "round32", "Partido 78", "2026-06-30", "12:00", "Dallas Stadium", "RE", "RI", "2° Grupo E", "2° Grupo I"),
-  game(79, "round32", "Partido 79", "2026-06-30", "20:00", "Estadio Ciudad de México", "WA", "3:CEFHI", "1° Grupo A", "3° Grupo C/E/F/H/I"),
-  game(80, "round32", "Partido 80", "2026-07-01", "11:00", "Atlanta Stadium", "WL", "3:EHIJK", "1° Grupo L", "3° Grupo E/H/I/J/K"),
-  game(81, "round32", "Partido 81", "2026-07-01", "19:00", "San Francisco Bay Area Stadium", "WD", "3:BEFIJ", "1° Grupo D", "3° Grupo B/E/F/I/J"),
-  game(82, "round32", "Partido 82", "2026-07-01", "14:00", "Seattle Stadium", "WG", "3:AEHIJ", "1° Grupo G", "3° Grupo A/E/H/I/J"),
-  game(83, "round32", "Partido 83", "2026-07-02", "18:00", "Toronto Stadium", "RK", "RL", "2° Grupo K", "2° Grupo L"),
-  game(84, "round32", "Partido 84", "2026-07-02", "14:00", "Los Angeles Stadium", "WH", "RJ", "1° Grupo H", "2° Grupo J"),
-  game(85, "round32", "Partido 85", "2026-07-02", "22:00", "BC Place, Vancouver", "WB", "3:EFGIJ", "1° Grupo B", "3° Grupo E/F/G/I/J"),
-  game(86, "round32", "Partido 86", "2026-07-03", "17:00", "Miami Stadium", "WJ", "RH", "1° Grupo J", "2° Grupo H"),
-  game(87, "round32", "Partido 87", "2026-07-03", "20:30", "Kansas City Stadium", "WK", "3:DEIJL", "1° Grupo K", "3° Grupo D/E/I/J/L"),
-  game(88, "round32", "Partido 88", "2026-07-03", "13:00", "Dallas Stadium", "RD", "RG", "2° Grupo D", "2° Grupo G"),
+  game(73, "round32", "Partido 73", "2026-06-28", "14:00", "Los Angeles Stadium", "TEAM:south-africa", "TEAM:canada", "Sudáfrica", "Canada"),
+  game(74, "round32", "Partido 74", "2026-06-29", "15:30", "Boston Stadium", "TEAM:germany", "TEAM:paraguay", "Alemania", "Paraguay"),
+  game(75, "round32", "Partido 75", "2026-06-29", "20:00", "Estadio Monterrey", "TEAM:netherlands", "TEAM:morocco", "Países Bajos", "Marruecos"),
+  game(76, "round32", "Partido 76", "2026-06-29", "12:00", "Houston Stadium", "TEAM:brazil", "TEAM:japan", "Brazil", "Japan"),
+  game(77, "round32", "Partido 77", "2026-06-30", "16:00", "New York New Jersey Stadium", "TEAM:france", "TEAM:sweden", "Francia", "Suecia"),
+  game(78, "round32", "Partido 78", "2026-06-30", "12:00", "Dallas Stadium", "TEAM:ivory-coast", "TEAM:norway", "Costa de Marfil", "Noruega"),
+  game(79, "round32", "Partido 79", "2026-06-30", "20:00", "Estadio Ciudad de México", "TEAM:mexico", "TEAM:ecuador", "México", "Ecuador"),
+  game(80, "round32", "Partido 80", "2026-07-01", "11:00", "Atlanta Stadium", "TEAM:england", "TEAM:dr-congo", "Inglaterra", "RD Congo"),
+  game(81, "round32", "Partido 81", "2026-07-01", "19:00", "San Francisco Bay Area Stadium", "TEAM:united-states", "TEAM:bosnia", "Estados Unidos", "Bosnia y Herzegovina"),
+  game(82, "round32", "Partido 82", "2026-07-01", "14:00", "Seattle Stadium", "TEAM:belgium", "TEAM:senegal", "Bélgica", "Senegal"),
+  game(83, "round32", "Partido 83", "2026-07-02", "18:00", "Toronto Stadium", "TEAM:portugal", "TEAM:croatia", "Portugal", "Croacia"),
+  game(84, "round32", "Partido 84", "2026-07-02", "14:00", "Los Angeles Stadium", "TEAM:spain", "TEAM:austria", "España", "Austria"),
+  game(85, "round32", "Partido 85", "2026-07-02", "22:00", "BC Place, Vancouver", "TEAM:switzerland", "TEAM:algeria", "Suiza", "Argelia"),
+  game(86, "round32", "Partido 86", "2026-07-03", "17:00", "Miami Stadium", "TEAM:argentina", "TEAM:cape-verde", "Argentina", "Cabo Verde"),
+  game(87, "round32", "Partido 87", "2026-07-03", "20:30", "Kansas City Stadium", "TEAM:colombia", "TEAM:ghana", "Colombia", "Ghana"),
+  game(88, "round32", "Partido 88", "2026-07-03", "13:00", "Dallas Stadium", "TEAM:australia", "TEAM:egypt", "Australia", "Egipto"),
   game(89, "round16", "Partido 89", "2026-07-04", "16:00", "Philadelphia Stadium", "WIN:74", "WIN:77", "Ganador Partido 74", "Ganador Partido 77"),
   game(90, "round16", "Partido 90", "2026-07-04", "12:00", "Houston Stadium", "WIN:73", "WIN:75", "Ganador Partido 73", "Ganador Partido 75"),
   game(91, "round16", "Partido 91", "2026-07-05", "14:00", "New York New Jersey Stadium", "WIN:76", "WIN:78", "Ganador Partido 76", "Ganador Partido 78"),
@@ -220,6 +221,7 @@ function resolveSeed(
 ) {
   if (seed.startsWith("WIN:")) return winner(built.get(seed.slice(4))!, picks);
   if (seed.startsWith("LOS:")) return loser(built.get(seed.slice(4)), picks);
+  if (seed.startsWith("TEAM:")) return getTeam(seed.slice(5));
   if (seed.startsWith("3:")) {
     const allowed = seed.slice(2).split("") as GroupId[];
     const candidate = qualifiedThirds.find(
